@@ -1,20 +1,15 @@
 package main
 
 import (
-	"fmt"
+	"io"
 	"log"
 	"time"
 
-	owm "github.com/briandowns/openweathermap"
+	"net/http"
 
 	"github.com/pterm/pterm"
 )
 
-const (
-	owmKey = "9b5b2bd8ccff0d3c3647368f7ab4dcac"
-)
-
-var forecast *owm.Forecast5WeatherData
 var weather string
 var needs_clear bool
 
@@ -35,22 +30,26 @@ func main() {
 		ds := bigFont(now.Format(" Mon, Jan 2 "))
 		pterm.DefaultCenter.Println(ds)
 
-		ws := bigFont(fmt.Sprintf(" %s ", weather))
-		pterm.DefaultCenter.Println(ws)
+		//ws := bigFont(fmt.Sprintf(" %s ", weather))
+		pterm.DefaultCenter.Println(weather)
 
 		time.Sleep(200 * time.Millisecond)
 	}
 }
 
-
 func getForecast() {
-	w, err := owm.NewForecast("5", "C", "RU", owmKey)
+	resp, err := http.Get("https://wttr.in/?0A")
 	if err != nil {
-		log.Println(err)
+		log.Fatalln(err)
 	}
-	w.DailyByName("St. Petersburg, Russia", 5)
-	forecast = w.ForecastWeatherJson.(*owm.Forecast5WeatherData)
-	weather = fmt.Sprintf("%.f °C", forecast.List[0].Main.Temp)
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	weather = string(body)
 }
 
 func startForecastTicker() {
@@ -60,7 +59,6 @@ func startForecastTicker() {
 			select {
 			case <-ticker.C:
 				getForecast()
-				needs_clear = true
 			}
 		}
 	}()
