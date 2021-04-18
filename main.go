@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -24,21 +25,21 @@ func main() {
 	for {
 		moveCursor(offset)
 		now := time.Now()
-		ts := bigFont(now.Format(" 15:04:05 "))
+		ts := bigFont(now.Format(" 15:04:05 "), pterm.FgLightWhite)
 		pterm.DefaultCenter.Println(ts)
 
-		ds := bigFont(now.Format(" Mon, Jan 2 "))
+		ds := bigFont(now.Format(" Mon, Jan 2 "), pterm.FgWhite)
 		pterm.DefaultCenter.Println(ds)
 
-		//ws := bigFont(fmt.Sprintf(" %s ", weather))
-		pterm.DefaultCenter.Println(weather)
+		ws := bigFont(fmt.Sprintf(" %s ", weather), pterm.FgLightGreen)
+		pterm.DefaultCenter.Println(ws)
 
 		time.Sleep(200 * time.Millisecond)
 	}
 }
 
 func getForecast() {
-	resp, err := http.Get("https://wttr.in/?0A")
+	resp, err := http.Get("https://wttr.in/?format=%t")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -65,8 +66,10 @@ func startForecastTicker() {
 	getForecast()
 }
 
-func bigFont(str string) string {
-	s, _ := pterm.DefaultBigText.WithLetters(pterm.NewLettersFromString(str)).Srender()
+func bigFont(str string, color pterm.Color) string {
+	s, _ := pterm.DefaultBigText.WithLetters(
+		pterm.NewLettersFromStringWithStyle(str, pterm.NewStyle(color))).
+		Srender()
 	return s
 }
 
